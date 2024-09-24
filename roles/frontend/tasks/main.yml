@@ -1,0 +1,36 @@
+---
+# tasks file for roles/frontend
+- name: Crear el directorio /home/jhordy/imagen_docker/ui/ si no existe
+  ansible.builtin.file:
+    path: /home/jhordy/imagen_docker/ui/
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Copiar el archivo Docker .tar a la VM frontend
+  ansible.builtin.copy:
+    src: /home/jhordy/imagen_docker/ui/my-node-app.tar
+    dest: /home/jhordy/imagen_docker/ui/my-node-app.tar
+  become: yes
+
+- name: Verificar si la imagen Docker ya está cargada
+  shell: docker images -q my-node-app:latest
+  register: docker_image_id
+  changed_when: docker_image_id.stdout == ""
+
+- name: Cargar la imagen Docker en el bastion si no está cargada
+  ansible.builtin.command: docker load -i /home/jhordy/imagen_docker/ui/my-node-app.tar
+  when: docker_image_id.stdout == ""
+  become: yes
+
+- name: Verificar si el contenedor ya está corriendo
+  shell: docker ps -q -f name=my-frontend-app
+  register: container_id
+  changed_when: container_id.stdout == ""
+
+- name: Ejecutar el contenedor Docker del frontend si no está corriendo
+  shell: |
+        if [ -z "$(docker ps -q -f name=my-frontend-app)" ]; then
+          docker run -d --name my-frontend-app --restart always -p 3030:3030 my-node-app:latest
+        fi
+  when: container_id.stdout == ""

@@ -1,0 +1,40 @@
+---
+# tasks file for backend role
+- name: Crear el directorio /home/jhordy/imagen_docker/back/ si no existe
+  ansible.builtin.file:
+    path: /home/jhordy/imagen_docker/back/
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Copiar el archivo Docker .tar a la VM backend
+  ansible.builtin.copy:
+    src: /home/jhordy/imagen_docker/back/my-node-app-backend.tar
+    dest: /home/jhordy/imagen_docker/back/my-node-app-backend.tar
+  become: yes
+
+- name: Verificar si la imagen Docker ya está cargada
+  shell: docker images -q my-node-app-backend:latest
+  register: docker_image_id
+  changed_when: docker_image_id.stdout == ""
+
+- name: Cargar la imagen Docker en el servidor si no está cargada
+  ansible.builtin.command: docker load -i /home/jhordy/imagen_docker/back/my-node-app-backend.tar
+  when: docker_image_id.stdout == ""
+
+- name: Verificar si el contenedor ya está corriendo
+  shell: docker ps -q -f name=my-backend-app
+  register: container_id
+  changed_when: container_id.stdout == ""
+
+- name: Verificar si el contenedor ya está corriendo
+  shell: docker ps -q -f name=my-backend-app
+  register: container_id
+  changed_when: container_id.stdout == ""
+
+- name: Ejecutar el contenedor Docker del backend si no está corriendo
+  shell: |
+        if [ -z "$(docker ps -q -f name=my-backend-app)" ]; then
+          docker run -d --name my-backend-app --restart always -p 3000:3000 my-node-app-backend:latest
+        fi
+  when: container_id.stdout == ""

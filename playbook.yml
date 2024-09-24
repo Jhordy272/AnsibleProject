@@ -1,0 +1,32 @@
+---
+- name: Deploy Application
+  hosts: all
+  become: yes
+
+  roles:
+    - common
+
+- name: Configure Frontend
+  hosts: frontend
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  roles:
+    - frontend
+
+- name: Configure Backend
+  hosts: backend
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  roles:
+    - backend
+
+#- name: Configure Database
+#  hosts: db
+#  become: yes
+#
+#  roles:
+#    - database
